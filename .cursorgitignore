@@ -1,0 +1,15 @@
+# Cursor IDE specific files
+.cursor/
+.cursor-log/
+.cursor-settings/
+.cursor-workspace/
+
+# Cursor temporary files
+*.cursor-tmp
+.cursor-tmp/
+
+# Cursor cache
+.cursor-cache/
+
+# Cursor AI generated files
+.cursor-ai/ 
