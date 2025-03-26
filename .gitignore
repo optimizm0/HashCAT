@@ -10,6 +10,9 @@ node_modules/
 /build
 /dist
 
+# Sui Move build
+/contracts/build/
+
 # Misc
 .DS_Store
 .env
