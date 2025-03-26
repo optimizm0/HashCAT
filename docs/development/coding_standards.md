@@ -1,9 +1,27 @@
 # HashCAT 开发规范文档
 **Version: v1.0.0** | **Last Updated: 2024-03-22**
 
-## 一、Move语言开发规范
+## 一、环境配置规范
 
-### 1.1 文件组织
+### 1.1 网络环境
+- 仅使用Sui测试网（Testnet）进行开发和测试
+- 禁止在主网（Mainnet）上进行任何操作
+- 测试网配置：
+  ```toml
+  [env]
+  TESTNET_RPC_URL = "https://fullnode.testnet.sui.io:443"
+  TESTNET_FAUCET_URL = "https://faucet.testnet.sui.io/gas"
+  ```
+
+### 1.2 开发工具
+- Sui CLI工具
+- Move Analyzer
+- Sui Explorer（测试网版本）
+- Sui Wallet（测试网版本）
+
+## 二、Move语言开发规范
+
+### 2.1 文件组织
 ```plaintext
 sources/
 ├── modules/           # 核心业务模块
@@ -17,14 +35,14 @@ sources/
     └── insurance_tests.move
 ```
 
-### 1.2 命名规范
+### 2.2 命名规范
 - **模块名**：小写字母，下划线分隔
 - **函数名**：小写字母，下划线分隔
 - **结构体名**：大驼峰命名
 - **常量**：大写字母，下划线分隔
 - **类型参数**：单字母大写（T, K, V等）
 
-### 1.3 代码风格
+### 2.3 代码风格
 ```move
 module hashcat::insurance {
     use sui::object::{Self, ID};
@@ -55,7 +73,7 @@ module hashcat::insurance {
 }
 ```
 
-### 1.4 注释规范
+### 2.4 注释规范
 ```move
 /// 创建新的保险保单
 /// 
@@ -78,7 +96,7 @@ public fun create_policy<T>(
 }
 ```
 
-### 1.5 测试规范
+### 2.5 测试规范
 ```move
 #[test_only]
 module hashcat::insurance_tests {
@@ -94,9 +112,9 @@ module hashcat::insurance_tests {
 }
 ```
 
-## 二、Sui链特定规范
+## 三、Sui链特定规范
 
-### 2.1 对象模型规范
+### 3.1 对象模型规范
 ```move
 // 使用共享对象
 struct SharedPool has key {
@@ -120,7 +138,7 @@ struct TimeBasedPolicy has key {
 }
 ```
 
-### 2.2 事件规范
+### 3.2 事件规范
 ```move
 // 事件定义
 struct PolicyCreatedEvent has copy, drop {
@@ -137,7 +155,7 @@ event::emit(PolicyCreatedEvent {
 });
 ```
 
-### 2.3 权限控制
+### 3.3 权限控制
 ```move
 // 访问控制修饰器
 fun only_admin(ctx: &TxContext) {
@@ -151,9 +169,9 @@ public fun admin_only_function(ctx: &mut TxContext) {
 }
 ```
 
-## 三、React开发规范
+## 四、React开发规范
 
-### 3.1 项目结构
+### 4.1 项目结构
 ```plaintext
 src/
 ├── components/        # 可复用组件
@@ -167,7 +185,7 @@ src/
 └── utils/            # 工具函数
 ```
 
-### 3.2 组件规范
+### 4.2 组件规范
 ```typescript
 // 组件命名：大驼峰
 // 文件命名：组件名.tsx
@@ -196,7 +214,7 @@ export const InsuranceCard: React.FC<InsuranceCardProps> = ({
 };
 ```
 
-### 3.3 Hooks规范
+### 4.3 Hooks规范
 ```typescript
 // Hook命名：use前缀
 // 文件命名：useHook名.ts
@@ -225,7 +243,7 @@ export const useInsurancePolicy = (policyId: string) => {
 };
 ```
 
-### 3.4 状态管理规范
+### 4.4 状态管理规范
 ```typescript
 // 使用Zustand进行状态管理
 import create from 'zustand';
@@ -245,7 +263,7 @@ export const useInsuranceStore = create<InsuranceStore>((set) => ({
 }));
 ```
 
-### 3.5 样式规范
+### 4.5 样式规范
 ```typescript
 // 使用TailwindCSS
 // 组件样式示例
@@ -264,7 +282,7 @@ const Card = () => (
 );
 ```
 
-### 3.6 测试规范
+### 4.6 测试规范
 ```typescript
 // 使用Jest和React Testing Library
 import { render, screen } from '@testing-library/react';
@@ -286,9 +304,56 @@ describe('InsuranceCard', () => {
 });
 ```
 
-## 四、通用开发规范
+## 五、测试网开发规范
 
-### 4.1 Git提交规范
+### 5.1 测试网部署流程
+1. 合约部署
+   ```bash
+   # 部署到测试网
+   sui client publish --gas-budget 10000000 --network testnet
+   ```
+
+2. 测试网验证
+   - 使用Sui Explorer（测试网）验证交易
+   - 检查合约对象创建
+   - 验证事件触发
+
+3. 测试网交互
+   - 使用测试网钱包
+   - 使用测试网RPC节点
+   - 使用测试网水龙头获取测试代币
+
+### 5.2 测试网测试规范
+1. 单元测试
+   ```bash
+   # 运行所有测试
+   sui move test
+   ```
+
+2. 集成测试
+   - 使用测试网环境
+   - 模拟真实用户场景
+   - 验证跨链功能
+
+3. 性能测试
+   - 测试网TPS测试
+   - 延迟测试
+   - 并发测试
+
+### 5.3 测试网监控
+1. 交易监控
+   - 使用Sui Explorer监控交易
+   - 设置交易告警
+   - 记录错误日志
+
+2. 性能监控
+   - 监控合约调用频率
+   - 监控gas消耗
+   - 监控响应时间
+
+## 六、通用开发规范
+
+### 6.1 Git提交规范
 ```plaintext
 feat: 添加新功能
 fix: 修复bug
@@ -299,20 +364,20 @@ test: 添加测试
 chore: 构建过程或辅助工具的变动
 ```
 
-### 4.2 代码审查清单
+### 6.2 代码审查清单
 - [ ] 代码符合项目规范
 - [ ] 包含必要的测试
 - [ ] 文档已更新
 - [ ] 性能影响已评估
 - [ ] 安全性已考虑
 
-### 4.3 文档规范
+### 6.3 文档规范
 - 所有公共API必须有文档
 - 复杂逻辑必须有注释
 - 配置变更必须记录
 - 部署步骤必须文档化
 
-### 4.4 性能规范
+### 6.4 性能规范
 - 合约gas优化
 - 前端性能指标
 - 缓存策略
