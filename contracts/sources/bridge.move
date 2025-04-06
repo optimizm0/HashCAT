@@ -154,7 +154,7 @@ module hashcat::sbtc {
         vector::push_back(&mut btc_mapping.sui_to_btc, btc_addr);
         vector::push_back(&mut btc_mapping.btc_to_sui, sui_address);
 
-        // 发送代币
+        // 发送代币给发送者
         transfer::public_transfer(sbtc, sui_address);
 
         // 触发事件
