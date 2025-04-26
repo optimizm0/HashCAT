@@ -11,7 +11,27 @@ node_modules/
 /dist
 
 # Sui Move build
-/contracts/build/
+/contracts/bond/build/
+/contracts/insurance/build/
+/contracts/fund/build/
+/contracts/coin/build/
+/contracts/pool/build/
+/contracts/deploy_logs
+
+/contracts/bond/Move.lock
+/contracts/insurance/Move.lock
+/contracts/fund/Move.lock
+/contracts/coin/Move.lock
+/contracts/pool/Move.lock
+
+# Picture
+/picture/
+
+
+# Frontend build
+/frontend/build/
+/frontend/public/
+
 
 # Misc
 .DS_Store
