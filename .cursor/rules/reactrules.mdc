@@ -1,0 +1,31 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Type Declarations
+Define clear types for component props and state.
+
+# File Extensions
+Use .tsx for files with JSX and .ts for plain TypeScript files.
+
+# Type Safety
+Leverage TypeScript's type system for type safety, avoiding the any type.
+
+# React Hooks
+Define return types and parameter types for custom hooks.
+
+# Modules and Import Paths
+Use relative paths or aliases for imports, avoiding hardcoded absolute paths.
+
+# Linting and Formatting
+Use ESLint and Prettier, ensuring support for TypeScript files.
+
+# TypeScript Configuration
+Enable strict mode options in tsconfig.json.
+
+# Error Handling
+Implement appropriate error handling in asynchronous operations and potentially failing code.
+
+# Package Reference
+Before introducing new dependencies, check the dependencies already introduced in @package.json. If there are dependencies with duplicate functions, use them instead of introducing new dependencies.

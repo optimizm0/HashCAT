@@ -1,0 +1,27 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Move Contract Design
+Design Move contracts for security and efficiency, keeping them modular and reusable.
+
+# Type Safety
+Leverage Move's type system for safety and correctness.
+
+# Contract Testing
+Develop a comprehensive suite of tests for Move contracts.
+
+# Version Control
+Use version control to manage Move contract changes and upgrades.
+# Front-end Integration
+Set up React front-end to interact with Move contracts using Sui DApp Kit APIs or SDKs.
+
+# Security Audits
+Conduct security audits for your Move contracts.
+
+# Documentation
+Maintain clear documentation for Move contracts and front-end integration.
+
+# Gas Optimization
+Optimize Move code to reduce gas costs and transaction fees.
