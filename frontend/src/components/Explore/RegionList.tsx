@@ -101,13 +101,13 @@ export const RegionList: React.FC<RegionListProps> = ({
               <TableHead>
                 <TableRow>
                   <StyledTableCell className="header" onClick={() => onSort('name')}>
-                    国家/地区
+                    Country/Region
                   </StyledTableCell>
                   <StyledTableCell className="header" onClick={() => onSort('totalOI')}>
-                    哈希率 (EH/s)
+                    Hashrate (EH/s)
                   </StyledTableCell>
                   <StyledTableCell className="header" onClick={() => onSort('totalOIPercentage')}>
-                    比例 (%)
+                    Percentage (%)
                   </StyledTableCell>
                 </TableRow>
               </TableHead>
@@ -125,9 +125,6 @@ export const RegionList: React.FC<RegionListProps> = ({
                     <StyledTableCell>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Typography variant="body1">{region.name}</Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          ({region.code})
-                        </Typography>
                       </Box>
                     </StyledTableCell>
                     <StyledTableCell>
@@ -161,7 +158,7 @@ export const RegionList: React.FC<RegionListProps> = ({
               }}
             >
               <Typography variant="body1" color="text.secondary">
-                请选择一个国家/地区查看详情
+                Please select a country/region to view details
               </Typography>
             </Box>
           )}

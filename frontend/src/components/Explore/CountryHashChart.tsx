@@ -119,25 +119,25 @@ const CountryHashChart: React.FC<CountryHashChartProps> = ({ country }) => {
                     yAxisId="left" 
                     orientation="left"
                     domain={[0, 'auto']}
-                    label={{ value: '哈希率 (EH/s)', angle: -90, position: 'insideLeft' }}
+                    label={{ value: 'Hashrate (EH/s)', angle: -90, position: 'insideLeft' }}
                   />
                   <YAxis 
                     yAxisId="right" 
                     orientation="right" 
                     domain={[0, 100]}
-                    label={{ value: '百分比 (%)', angle: 90, position: 'insideRight' }}
+                    label={{ value: 'Percentage (%)', angle: 90, position: 'insideRight' }}
                   />
                   <Tooltip 
                     labelFormatter={formatDate}
                     formatter={(value, name) => {
-                      if (name === 'absoluteHashRate') return [`${value} EH/s`, '哈希率'];
-                      if (name === 'percentage') return [`${value}%`, '百分比'];
+                      if (name === 'absoluteHashRate') return [`${value} EH/s`, 'Hashrate'];
+                      if (name === 'percentage') return [`${value}%`, 'Percentage'];
                       return [value, name];
                     }}
                   />
                   <Legend payload={[
-                    { value: '哈希率 (EH/s)', type: 'line', color: '#8884d8' },
-                    { value: '百分比 (%)', type: 'line', color: '#82ca9d' }
+                    { value: 'Hashrate (EH/s)', type: 'line', color: '#8884d8' },
+                    { value: 'Percentage (%)', type: 'line', color: '#82ca9d' }
                   ]} />
                   <Line 
                     yAxisId="left"
@@ -145,14 +145,14 @@ const CountryHashChart: React.FC<CountryHashChartProps> = ({ country }) => {
                     dataKey="absoluteHashRate" 
                     stroke="#8884d8" 
                     activeDot={{ r: 8 }} 
-                    name="哈希率"
+                    name="Hashrate"
                   />
                   <Line 
                     yAxisId="right"
                     type="monotone" 
                     dataKey="percentage" 
                     stroke="#82ca9d" 
-                    name="百分比"
+                    name="Percentage"
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -164,7 +164,7 @@ const CountryHashChart: React.FC<CountryHashChartProps> = ({ country }) => {
                 height: '100%' 
               }}>
                 <Typography variant="body1" color="text.secondary">
-                  {dataStatus.errorMessage || '加载数据中...'}
+                  {dataStatus.errorMessage || 'Loading data...'}
                 </Typography>
               </Box>
             )}
