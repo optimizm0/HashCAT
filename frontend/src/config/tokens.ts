@@ -1,10 +1,19 @@
 import { SWAP_CONTRACT, TEST_TOKENS_CONTRACT } from './contracts';
 
+export enum TokenSymbol {
+  BTC = 'BTC',
+  SBTC = 'sBTC',
+  TEST_BTC = 'TEST_BTC',
+  SUI = 'SUI',
+  SWAP_BTC = 'swapBTC',
+  SWAP_SUI = 'swapSUI',
+}
+
 export interface Token {
-  symbol: string;
+  symbol: TokenSymbol;
   name: string;
   chain: string;
-  icon: 'BTC' | 'SUI' | 'sBTC';
+  icon: 'BTC' | 'SUI' | 'sBTC' | 'TEST_BTC';
   address?: string;
   decimals?: number;
   coinType?: string;
@@ -12,22 +21,31 @@ export interface Token {
 
 export const TOKENS: Token[] = [
   {
-    symbol: 'BTC',
+    symbol: TokenSymbol.BTC,
     name: 'Bitcoin',
     chain: 'Bitcoin',
     icon: 'BTC',
   },
   {
-    symbol: 'sBTC',
+    symbol: TokenSymbol.SBTC,
     name: 'Synthetic Bitcoin',
     chain: 'Sui',
-    icon: 'sBTC',
+    icon: 'BTC',
     address: TEST_TOKENS_CONTRACT.TEST_BTC.METADATA_ID,
     decimals: TEST_TOKENS_CONTRACT.TEST_BTC.DECIMALS,
     coinType: TEST_TOKENS_CONTRACT.TEST_BTC.COIN_TYPE,
   },
   {
-    symbol: 'SUI',
+    symbol: TokenSymbol.TEST_BTC,
+    name: 'Synthetic Bitcoin',
+    chain: 'Sui',
+    icon: 'BTC',
+    address: TEST_TOKENS_CONTRACT.TEST_BTC.METADATA_ID,
+    decimals: TEST_TOKENS_CONTRACT.TEST_BTC.DECIMALS,
+    coinType: TEST_TOKENS_CONTRACT.TEST_BTC.COIN_TYPE,
+  },
+  {
+    symbol: TokenSymbol.SUI,
     name: 'Sui',
     chain: 'Sui',
     icon: 'SUI',
@@ -37,7 +55,7 @@ export const TOKENS: Token[] = [
   },
   // SWAP合约代币
   {
-    symbol: 'swapBTC',
+    symbol: TokenSymbol.SWAP_BTC,
     name: 'Swap Bitcoin Token',
     chain: 'Sui',
     icon: 'BTC',
@@ -46,7 +64,7 @@ export const TOKENS: Token[] = [
     coinType: SWAP_CONTRACT.TEST_BTC.COIN_TYPE,
   },
   {
-    symbol: 'swapSUI',
+    symbol: TokenSymbol.SWAP_SUI,
     name: 'Swap Sui Token',
     chain: 'Sui',
     icon: 'SUI',
