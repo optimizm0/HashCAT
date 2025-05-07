@@ -23,8 +23,11 @@ const StyledAppBar = styled(AppBar)(({ theme }) => ({
 }));
 
 const LogoImage = styled('img')({
+  width: 36,
   height: 36,
   marginRight: 8,
+  borderRadius: '50%',
+  objectFit: 'cover',
 });
 
 const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
@@ -36,7 +39,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
           aria-label="open drawer"
           onClick={onMenuClick}
           edge="start"
-          sx={{ mr: 2 }}
+          sx={{ ml: 0.01,mr: 2 }}
         >
           <MenuIcon />
         </IconButton>

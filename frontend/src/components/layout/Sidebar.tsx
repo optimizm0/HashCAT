@@ -67,9 +67,9 @@ const DepositButton = styled(Button)(({ theme }) => ({
 
 const menuItems = [
   { id: 'explore', text: 'Explore', icon: <ExploreIcon /> },
-  { id: 'swap', text: 'Swap', icon: <SwapHorizIcon /> },
-  { id: 'liquidity', text: 'Liquidity', icon: <WaterDropIcon /> },
-  { id: 'bondpool', text: 'Bond Pool', icon: <AccountBalanceIcon /> },
+  // { id: 'swap', text: 'Swap', icon: <SwapHorizIcon /> },
+  { id: 'liquidity', text: 'Facuet', icon: <WaterDropIcon /> },
+  { id: 'bondpool', text: 'Bond', icon: <AccountBalanceIcon /> },
   { id: 'policies', text: 'Policies', icon: <ReceiptIcon /> },
 ];
 
@@ -92,7 +92,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         onClick={() => handleMenuClick(item.id)}
         sx={{
           minHeight: 56,
-          px: 3,
+          px: 1.9,
           borderRadius: '8px',
           mx: 1,
           mb: 0.5,
@@ -111,7 +111,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         <ListItemIcon
           sx={{
             minWidth: 36,
-            mr: isOpen ? 3 : 'auto',
+            mr: isOpen ? 2 : 'auto',
             justifyContent: 'center',
             color: currentPage === item.id ? 'primary.main' : 'text.secondary',
           }}
@@ -155,7 +155,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         backgroundColor: 'background.paper',
       }}>
         {isOpen ? (
-          <DepositButton fullWidth>
+          <DepositButton fullWidth onClick={() => onPageChange('bondpool')}>
             Deposit
           </DepositButton>
         ) : (
@@ -168,6 +168,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               borderRadius: '50%',
               margin: '0 auto',
             }}
+            onClick={() => onPageChange('bondpool')}
           >
             <DownloadIcon />
           </DepositButton>
