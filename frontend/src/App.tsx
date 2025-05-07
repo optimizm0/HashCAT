@@ -8,6 +8,7 @@ import { Explore } from './components/Explore';
 import LiquidityInterface from './components/Liquidity/LiquidityInterface';
 import PolicyList from './components/Insurance/PolicyList';
 import InsuranceInterface from './components/Insurance/InsuranceInterface';
+import LogPanel from './components/layout/LogPanel';
 
 const DRAWER_WIDTH = 240;
 const DRAWER_WIDTH_COLLAPSED = 72;
@@ -86,6 +87,9 @@ const App: React.FC = () => {
         >
           {renderContent()}
         </Box>
+        
+        {/* 全局日志面板 */}
+        <LogPanel />
       </Box>
     </ThemeProvider>
   );
