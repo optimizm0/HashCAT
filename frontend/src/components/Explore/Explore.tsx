@@ -40,12 +40,6 @@ const Explore: React.FC = () => {
 
   return (
     <Box sx={{ p: 3, width: '100%' }}>
-      {/* 顶部标题区 */}
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, gap: 2 }}>
-        <Typography variant="h6">
-          比特币挖矿哈希率分布
-        </Typography>
-      </Box>
 
       {/* 地区列表 */}
       <RegionList

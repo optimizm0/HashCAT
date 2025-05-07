@@ -252,13 +252,13 @@ const SwapInterface: React.FC = () => {
           variant="fullWidth"
           sx={{ mb: 3 }}
         >
-          <Tab label="兑换" />
-          <Tab label="跨链桥" />
+          <Tab label="Swap" />
+          <Tab label="Bridge" />
         </Tabs>
 
         <Box>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-            {tab === 0 ? '兑换代币' : '跨链桥转移'}
+            {tab === 0 ? 'Swap Tokens' : 'Bridge Transfer'}
           </Typography>
 
           <TokenSelector
@@ -307,7 +307,7 @@ const SwapInterface: React.FC = () => {
                 disabled={loading || parseFloat(fromValue) <= 0}
                 onClick={tab === 0 ? handleSwap : handleBridge}
               >
-                {loading ? '处理中...' : tab === 0 ? '兑换' : '转移'}
+                {loading ? 'Processing...' : tab === 0 ? 'Swap' : 'Transfer'}
               </StyledButton>
             </Box>
           )}

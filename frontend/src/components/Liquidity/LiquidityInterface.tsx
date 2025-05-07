@@ -7,7 +7,7 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
-import { CONTRACT_CONFIG } from '../../constants';
+import { TEST_TOKENS_CONTRACT } from '../../config/contracts';
 
 
 const StyledCard = styled(Card)(({ theme }) => ({
@@ -176,13 +176,13 @@ const LiquidityInterface: React.FC = () => {
   // 处理 TEST_BTC 铸造
   const handleMintTestBtc = async () => {
     if (!currentAccount || !suiClient) {
-      setError("请先连接钱包");
+      setError("Please connect wallet first");
       return;
     }
 
     const amount = parseFloat(testBtcAmount);
     if (isNaN(amount) || amount <= 0) {
-      setError("请输入有效的铸造数量");
+      setError("Please enter a valid mint amount");
       return;
     }
 
@@ -191,7 +191,7 @@ const LiquidityInterface: React.FC = () => {
       setError(null);
 
       // 计算实际铸造数量（考虑精度）
-      const mintAmount = Math.floor(amount * Math.pow(10, CONTRACT_CONFIG.TEST_BTC.DECIMALS));
+      const mintAmount = Math.floor(amount * Math.pow(10, TEST_TOKENS_CONTRACT.TEST_BTC.DECIMALS));
 
       // 创建交易区块
       const tx = new Transaction();
@@ -199,9 +199,9 @@ const LiquidityInterface: React.FC = () => {
       // @ts-ignore
       // 调用铸造函数
       tx.moveCall({
-        target: `${CONTRACT_CONFIG.PACKAGE_ID}::${CONTRACT_CONFIG.TEST_BTC.MODULE}::mint`,
+        target: `${TEST_TOKENS_CONTRACT.PACKAGE_ID}::${TEST_TOKENS_CONTRACT.TEST_BTC.MODULE}::mint`,
         arguments: [
-          tx.object(CONTRACT_CONFIG.TEST_BTC.MINT_CAP_ID),
+          tx.object(TEST_TOKENS_CONTRACT.TEST_BTC.MINT_CAP_ID),
           tx.pure.u64(BigInt(mintAmount)),
           tx.pure.address(currentAccount.address)
         ]
@@ -215,20 +215,20 @@ const LiquidityInterface: React.FC = () => {
       }, {
         onSuccess: (data: any) => {
           if (data && data.digest) {
-            setSuccessOperation(`铸造 ${amount} ${CONTRACT_CONFIG.TEST_BTC.SYMBOL}`);
+            setSuccessOperation(`Mint ${amount} ${TEST_TOKENS_CONTRACT.TEST_BTC.SYMBOL}`);
             setTransactionId(data.digest);
             setShowSuccessDialog(true);
           }
           setIsMinting(false);
         },
         onError: (err: any) => {
-          setError(`钱包交互失败: ${err instanceof Error ? err.message : String(err)}`);
+          setError(`Wallet interaction failed: ${err instanceof Error ? err.message : String(err)}`);
           setIsMinting(false);
         }
       });
     } catch (err: any) {
       console.error('铸造错误:', err);
-      setError(`铸造失败: ${err.message || JSON.stringify(err)}`);
+      setError(`Mint failed: ${err.message || JSON.stringify(err)}`);
       setIsMinting(false);
     }
   };
@@ -236,13 +236,13 @@ const LiquidityInterface: React.FC = () => {
   // 处理 TEST_SUI 铸造
   const handleMintTestSui = async () => {
     if (!currentAccount || !suiClient) {
-      setError("请先连接钱包");
+      setError("Please connect wallet first");
       return;
     }
 
     const amount = parseFloat(testSuiAmount);
     if (isNaN(amount) || amount <= 0) {
-      setError("请输入有效的铸造数量");
+      setError("Please enter a valid mint amount");
       return;
     }
 
@@ -251,7 +251,7 @@ const LiquidityInterface: React.FC = () => {
       setError(null);
 
       // 计算实际铸造数量（考虑精度）
-      const mintAmount = Math.floor(amount * Math.pow(10, CONTRACT_CONFIG.TEST_SUI.DECIMALS));
+      const mintAmount = Math.floor(amount * Math.pow(10, TEST_TOKENS_CONTRACT.TEST_SUI.DECIMALS));
 
       // 创建交易区块
       const tx = new Transaction();
@@ -259,9 +259,9 @@ const LiquidityInterface: React.FC = () => {
       // @ts-ignore
       // 调用铸造函数
       tx.moveCall({
-        target: `${CONTRACT_CONFIG.PACKAGE_ID}::${CONTRACT_CONFIG.TEST_SUI.MODULE}::mint`,
+        target: `${TEST_TOKENS_CONTRACT.PACKAGE_ID}::${TEST_TOKENS_CONTRACT.TEST_SUI.MODULE}::mint`,
         arguments: [
-          tx.object(CONTRACT_CONFIG.TEST_SUI.MINT_CAP_ID),
+          tx.object(TEST_TOKENS_CONTRACT.TEST_SUI.MINT_CAP_ID),
           tx.pure.u64(BigInt(mintAmount)),
           tx.pure.address(currentAccount.address)
         ]
@@ -275,20 +275,20 @@ const LiquidityInterface: React.FC = () => {
       }, {
         onSuccess: (data: any) => {
           if (data && data.digest) {
-            setSuccessOperation(`铸造 ${amount} ${CONTRACT_CONFIG.TEST_SUI.SYMBOL}`);
+            setSuccessOperation(`Mint ${amount} ${TEST_TOKENS_CONTRACT.TEST_SUI.SYMBOL}`);
             setTransactionId(data.digest);
             setShowSuccessDialog(true);
           }
           setIsMinting(false);
         },
         onError: (err: any) => {
-          setError(`钱包交互失败: ${err instanceof Error ? err.message : String(err)}`);
+          setError(`Wallet interaction failed: ${err instanceof Error ? err.message : String(err)}`);
           setIsMinting(false);
         }
       });
     } catch (err: any) {
       console.error('铸造错误:', err);
-      setError(`铸造失败: ${err.message || JSON.stringify(err)}`);
+      setError(`Mint failed: ${err.message || JSON.stringify(err)}`);
       setIsMinting(false);
     }
   };
@@ -297,7 +297,7 @@ const LiquidityInterface: React.FC = () => {
     <Box sx={{ p: 3 }}>
       <StyledCard>
         <Typography variant="h6" sx={{ mb: 2 }}>
-          测试代币铸造
+          Test Token Mint
         </Typography>
 
         {/* 钱包状态 */}
@@ -313,20 +313,20 @@ const LiquidityInterface: React.FC = () => {
             />
             <Typography variant="body2">
               {currentAccount
-                ? `已连接: ${currentAccount.address.slice(0, 6)}...${currentAccount.address.slice(-4)}`
-                : "钱包未连接"}
+                ? `Connected: ${currentAccount.address.slice(0, 6)}...${currentAccount.address.slice(-4)}`
+                : "Wallet not connected"}
             </Typography>
           </Box>
         </Stack>
 
         {/* TEST_BTC 铸造部分 */}
         <Stack spacing={2} sx={{ mb: 3 }}>
-          <Typography variant="subtitle1">铸造 {CONTRACT_CONFIG.TEST_BTC.SYMBOL}</Typography>
+          <Typography variant="subtitle1">Mint {TEST_TOKENS_CONTRACT.TEST_BTC.SYMBOL}</Typography>
           <Box sx={{ display: 'flex', gap: 2 }}>
             <TextField
               fullWidth
               size="small"
-              placeholder="输入数量"
+              placeholder="Enter amount"
               value={testBtcAmount}
               onChange={(e) => setTestBtcAmount(e.target.value)}
               disabled={isMinting}
@@ -337,19 +337,19 @@ const LiquidityInterface: React.FC = () => {
               disabled={!currentAccount || isMinting}
               startIcon={<AddIcon />}
             >
-              铸造
+              Mint
             </Button>
           </Box>
         </Stack>
 
         {/* TEST_SUI 铸造部分 */}
         <Stack spacing={2} sx={{ mb: 3 }}>
-          <Typography variant="subtitle1">铸造 {CONTRACT_CONFIG.TEST_SUI.SYMBOL}</Typography>
+          <Typography variant="subtitle1">Mint {TEST_TOKENS_CONTRACT.TEST_SUI.SYMBOL}</Typography>
           <Box sx={{ display: 'flex', gap: 2 }}>
             <TextField
               fullWidth
               size="small"
-              placeholder="输入数量"
+              placeholder="Enter amount"
               value={testSuiAmount}
               onChange={(e) => setTestSuiAmount(e.target.value)}
               disabled={isMinting}
@@ -360,7 +360,7 @@ const LiquidityInterface: React.FC = () => {
               disabled={!currentAccount || isMinting}
               startIcon={<AddIcon />}
             >
-              铸造
+              Mint
             </Button>
           </Box>
         </Stack>
@@ -380,7 +380,7 @@ const LiquidityInterface: React.FC = () => {
             </Typography>
             {transactionId && (
               <Typography variant="body2" color="white" sx={{ mt: 1 }}>
-                交易ID: {transactionId}
+                Transaction ID: {transactionId}
               </Typography>
             )}
           </Box>

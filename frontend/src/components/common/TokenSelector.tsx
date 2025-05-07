@@ -43,6 +43,8 @@ const getTokenIcon = (icon: Token['icon']) => {
       return <BitcoinIcon />;
     case 'sBTC':
       return <BitcoinIcon sx={{ opacity: 0.8 }} />;
+    case 'TEST_BTC':
+      return <BitcoinIcon sx={{ opacity: 0.8 }} />;
     case 'SUI':
       return <SuiIcon />;
     default:
