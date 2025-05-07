@@ -30,7 +30,7 @@ node_modules/
 
 # Frontend build
 /frontend/build/
-/frontend/public/
+/frontend/public/data
 
 
 # Misc
