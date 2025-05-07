@@ -3,139 +3,139 @@ CLOCK = "0x6"
 
 
 ## Coin Contract
-**Deployment Time**: 2025-04-23
+**Deployment Time**: 2025-04-26
 **Network**: Sui Testnet
-**Deployment Transaction**: `9n5ZFJ59cteE9fHpLXRoRcpHzKXVaGdnTmk9eWQoipeH`
+**Deployment Transaction**: `776WLVrHp9cpcVnhRgYGkLPGq1FoeL2ZXiefy5m8qFnL`
 
 ### Contract Address
-- **Package ID**: `0x23fda431351da3c9a3878a4200c76ececd7e17b237d0332751cfde64586e187d`
+- **Package ID**: `0xcbc842eb9ab052ca43a54d8576ba0b5225f761312a2ef0b828720e46b366b08c`
 - **Package Version**: 1
-- **Module List**:
+- **Module List**: test_btc, test_sui
 
 ### TEST_BTC Token
 1. **Token Metadata**:
-   - Object ID: `0x5e4b3ebdf804b72f90c9f710c5652f5b3c14f4c70a7e86e7b47480418f516519`
+   - Object ID: `0xdff5ba6bc703534e5a9f3e99ab35cb2005a9ea403003d21a4140bfd1c1a5eda4`
    - Owner: Immutable
-   - Decimals: 6
-   - Symbol: testBTC
+   - Decimals: 6 (预设值)
+   - Symbol: TEST_BTC
 
 2. **Minting Permission**:
-   - Object ID: `0xbcf71b38b9be2a0421b5712c99856382a11040ccb9899366aa8bd3141ae83d9c`
+   - Object ID: `0xd347cf88fb1b658b1dc19f4006f4019de7e937906d96fb5907e331110e65f4aa`
    - Owner: `0x7d87c83c2f71bb9388262c06f0eec7b57ee651bf1892a7a6fd6f1b1b931ac7fc`
 
 ### TEST_SUI Token
 1. **Token Metadata**:
-   - Object ID: `0xcfe76cd54f9f7a4a3ba40dd517e31ec41ff119f6d66dee755bfc81913c26c5f3`
+   - Object ID: `0x0a9b0d1cecfc11630a23271ab973a2b7f763c4c5767e48914b6832c4ff1951e4`
    - Owner: Immutable
-   - Decimals: 6
-   - Symbol: testSUI
+   - Decimals: 6 (预设值)
+   - Symbol: TEST_SUI
 
 2. **Minting Permission**:
-   - Object ID: `0x9a6ea06c831dacd80acda3ccfe424cb2470fd990366a7aef8f21fd26302f71ee`
+   - Object ID: `0x8f716d56de4206576f1543f64fecbe566eaf93d35624b986b0753488ed3e323b`
    - Owner: `0x7d87c83c2f71bb9388262c06f0eec7b57ee651bf1892a7a6fd6f1b1b931ac7fc`
 
 ### Upgrade Permission
 - **UpgradeCap**:
-  - Object ID: `0x8eaa02c6f2c0cbb27fda7cc6b9911dfa685d3508049273f54237655d852e7fc5`
+  - Object ID: `0x13444172fcf34637d81d781fc8b4041d21e637d37c53e88913261e4b92403de9`
   - Owner: `0x7d87c83c2f71bb9388262c06f0eec7b57ee651bf1892a7a6fd6f1b1b931ac7fc`
 
 
 ## Insurance Contract
-**Deployment Time**: 2023-05-18
+**Deployment Time**: 2025-05-07
 **Network**: Sui Testnet
-**Deployment Transaction**: `9Tgh2NFr1CyZcfAxqXNQqVE6pFxmiHoL7eaJcjeu6zYG`
+**Deployment Transaction**: `AyKMSPikDEQS5TUo1VZSreneAH9BgtfqkSqETitkDF8b`
 **Test Results**: Successfully tested insurance policy creation, premium calculation based on risk factors, and claim processing.
 
 **Contract Address**:
-- **Package ID**: `0xbf0bbd81d95efabc7b97b62be4cdaad12a1e8f21f6df4d69a83f16594cddf281`
+- **Package ID**: `0x05183e162f06e7544a050619766660fd78544d1449ad64db8b91eee3634a1a03`
 - **Package Version**: 1
-- **Module List**: insurance_pkg
+- **Module List**: insurance, insurance_nft
 
 **Insurance Manager Object**:
 - **PolicyManager**:
-  - Object ID: `0xdadd1668f95ee3c34c2725cb7fe2499929e57a7690e6c770a9990f4c86c71b15`
+  - Object ID: `0xcea4b3dd911bc8541a71273029613f0c54bb1a4042f8d2972677c5eac3eb6d7c`
   - Owner: Shared
-  - Current Base Rate: 3%
-  - Current Volatility Coefficient: 1.5
+  - Current Base Rate: 3% (预设值)
+  - Current Volatility Coefficient: 1.5 (预设值)
   - Admin: `0x7d87c83c2f71bb9388262c06f0eec7b57ee651bf1892a7a6fd6f1b1b931ac7fc`
 
 **Capability Objects**:
 - **UpgradeCap**:
-  - Object ID: `0x2b5ee4fbbc76c073d1f198d01011f2a4186ffbd43ff98ae482331b814e5bfeb0`
+  - Object ID: `0x0cae252ff41b66f67c317375c3e902c3666a67e9b143a251c480ba6c8448754b`
   - Owner: `0x7d87c83c2f71bb9388262c06f0eec7b57ee651bf1892a7a6fd6f1b1b931ac7fc`
 
 ## Pool Contract
-**Deployment Time**: 2025-04-23
+**Deployment Time**: 2025-04-26
 **Network**: Sui Testnet
-**Deployment Transaction**: `4kFX6uMiu9MWPqfwYZVoSAX57zpsCN514GKuZqGHmJKk`
+**Deployment Transaction**: `4G1FXwxccNDZQMEdzBShAc7k5wUUBP7owsoRrD8m9gEr`
 
 ### Contract Address
-- **Package ID**: `0x0ab5c0d9fcb1d0f69606d944a1d3a891e5038fa7391a9eb4e5c598522020bae4`
+- **Package ID**: `0x3fcb8ffa7daf76e8ebcff614db0a2dc73d5bfc4059da4c2cab3e85dfe4e3c7f3`
 - **Package Version**: 1
-- **Module List**:
+- **Module List**: move_swap
 
 ### Liquidity Pool Factory Object
 1. **PoolFactory**:
-   - Object ID: `0x514e028616208584dee64fccbef6e0253e4aa0cd0120b626bf23ffb6c0e2da1a`
-   - Owner: Shared
+   - Object ID: 未在日志中显示
+   - Owner: Shared (预设值)
    - Admin: `0x7d87c83c2f71bb9388262c06f0eec7b57ee651bf1892a7a6fd6f1b1b931ac7fc`
 
 ### Upgrade Permission
 - **UpgradeCap**:
-  - Object ID: `0xe3851a6a2a0f90e1852ae3d6f63498144349957e873e6253431f17ec5591b12b`
+  - Object ID: `0x6bfc3e9ab9414731e6efacea2543513ef0e1400795152df9489ac1820c24b1fb`
   - Owner: `0x7d87c83c2f71bb9388262c06f0eec7b57ee651bf1892a7a6fd6f1b1b931ac7fc`
 
 
 ## Fund Contract
-**Deployment Time**: 2023-05-18
+**Deployment Time**: 2025-05-07
 **Network**: Sui Testnet
-**Deployment Transaction**: `2SbdxzE3DWqwziyybBXf1cEzptThpR9Q9u6UtaKdmuMH`
+**Deployment Transaction**: `9znpJjtyG6F7AapvJGjL32mrZ9czhkqSSK2Q5s93C3mg`
 **Updates**: Fixed withdraw_insurance and withdraw_bond functions, implemented direct token transfer to caller
 
 ### Contract Address
-- **Package ID**: `0xe0a937e329191a1dc82a5dd325fe061d7a758eb40cd2313497bb1c56fc60d71b`
+- **Package ID**: `0xb06eebfd464eb39734a984d9f2df2a32fe852a63aec77a0ca7518a6eaa6d2f65`
 - **Package Version**: 1
 - **Module List**: fund
 
 ### Finance Pool Object
 1. **FinancePool**:
-   - Object ID: `0xdde2a58bfeddbfa4f535ef3867b2c0d8e12b3308dfd617a0e4df38bc4f2f5e44`
+   - Object ID: `0x0ade79ff8ca2fbff17da7711e89ee526c5344815c480826686da9d896f1d52eb`
    - Owner: Shared
    - Admin: `0x7d87c83c2f71bb9388262c06f0eec7b57ee651bf1892a7a6fd6f1b1b931ac7fc`
 
 ### Permission Objects
 1. **InsuranceCapability**:
-   - Object ID: `0xf446b5c71d293269c5749b06319ce90d25aec8aa7922c118e1a15853e4fda2d5`
+   - Object ID: `0x49939fb29bd049f5262f6c95e3042c8db7d396a5185a60cbfc9984a228acde97`
    - Owner: `0x7d87c83c2f71bb9388262c06f0eec7b57ee651bf1892a7a6fd6f1b1b931ac7fc`
 
 2. **BondCapability**:
-   - Object ID: `0xa6c5e7a707b5ef26e373c518ca931ff55ce25a5c16250d3bde67103f87779e76`
+   - Object ID: `0x2803bc4e7f9da724a8b92421da2219be3cbf39380675fcf082e332103bb72c9c`
    - Owner: `0x7d87c83c2f71bb9388262c06f0eec7b57ee651bf1892a7a6fd6f1b1b931ac7fc`
 
 ### Upgrade Permission
 - **UpgradeCap**:
-  - Object ID: `0xe043269419940006d439e62c99c9c41c3130cc6e0a54d9cdbca8bfc968ca2046`
+  - Object ID: `0xe5e140f63403ce400133c88cead473f14169b949c9b8650cd0dbd7001d1da897`
   - Owner: `0x7d87c83c2f71bb9388262c06f0eec7b57ee651bf1892a7a6fd6f1b1b931ac7fc`
 
 ## Bond Contract
-**Deployment Time**: 2023-05-18
+**Deployment Time**: 2025-05-07
 **Network**: Sui Testnet
-**Deployment Transaction**: `3EWTjZ2bVL2ZddW83oWUnrZthxCGF7VCpxE5AbnSs4m2`
+**Deployment Transaction**: `AzxBdikFm8n9yQQqSiGrsvdS2zmRxKg396GKWT1xwYW1`
 **Test Results**: Successfully tested bond purchase functionality. The contract implements a one-year lock-up period for bonds with interest accrual.
 
 **Contract Address**:
-- **Package ID**: `0x7952d6ef5a0a29b993dac031270e353801c4d1e2937a49749b289ff23139260a`
+- **Package ID**: `0x51726d9454c6e8a65424e92ebb5f6137bab935c5a9ce941eb2a380035685e537`
 - **Package Version**: 1
 - **Module List**: bond_pkg
 
 **Bond Manager Object**:
 - **BondPool**:
-  - Object ID: `0x60352d4d3a195f0cff29715c8ea5964203a7994f3a54fcaa8b825a85eb4167c1`
+  - Object ID: `0xfbff0f4f2502546fbd446577e318c452378ca51f6d854c07745dd7b06ae18c04`
   - Owner: Shared
-  - Current APY: 6%
+  - Current APY: 6% (预设值)
   - Admin: `0x7d87c83c2f71bb9388262c06f0eec7b57ee651bf1892a7a6fd6f1b1b931ac7fc`
 
 **Capability Objects**:
 - **UpgradeCap**:
-  - Object ID: `0x71d3b7a32c29773d77c3f132ec019b7c73c65157ab31798ad95ee626bff042c1`
+  - Object ID: `0x5e984dec3c745692f25edf278f6efa71c85d27cc2be998408fe5e39a9097c21f`
   - Owner: `0x7d87c83c2f71bb9388262c06f0eec7b57ee651bf1892a7a6fd6f1b1b931ac7fc`
