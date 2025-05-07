@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box, 
   Card, 
@@ -13,7 +13,13 @@ import {
   Grid,
   CircularProgress,
   Alert,
-  Snackbar
+  Snackbar,
+  IconButton,
+  Drawer,
+  List,
+  ListItem,
+  ListItemText,
+  Divider
 } from '@mui/material';
 import {
   useCurrentAccount,
@@ -21,10 +27,16 @@ import {
   useSignAndExecuteTransaction,
   ConnectButton,
 } from '@mysten/dapp-kit';
+import { Transaction } from '@mysten/sui/transactions';
 import { TOKENS } from '../../config/tokens';
 import { INSURANCE_CONTRACT } from '../../config/contracts';
+import { COMMON_CONTRACT } from '../../config/contracts';
 import { useTokenBalance } from '../../hooks/useTokenBalance';
 import { getCountryHistoricalData } from '../Explore/countryData';
+import BugReportIcon from '@mui/icons-material/BugReport';
+import DownloadIcon from '@mui/icons-material/Download';
+import CloseIcon from '@mui/icons-material/Close';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 const StyledCard = styled(Card)(({ theme }) => ({
   maxWidth: '100%',
@@ -59,12 +71,12 @@ interface InsuranceProduct {
 const INSURANCE_PRODUCTS: InsuranceProduct[] = [
   {
     id: 'btc_hashrate',
-    name: 'BTC算力波动保险',
+    name: 'BTC Hashrate Volatility Insurance',
     description: '',
     icon: 'BTC',
-    coverage: 0.8, // 80%保障
-    minDuration: 7, // 最少7天
-    maxDuration: 90 // 最多90天
+    coverage: 0.8, // 80% coverage
+    minDuration: 7, // min 7 days
+    maxDuration: 90 // max 90 days
   }
 ];
 
@@ -73,7 +85,45 @@ interface InsuranceInterfaceProps {
   compact?: boolean; // 是否使用紧凑版本
 }
 
-const InsuranceInterface: React.FC<InsuranceInterfaceProps> = ({ country = '全球', compact = false }) => {
+// 添加日志管理类
+class LogManager {
+  static logs: string[] = [];
+  
+  static addLog(message: string, data?: any): void {
+    const timestamp = new Date().toISOString();
+    const logMessage = data 
+      ? `[${timestamp}] ${message}: ${JSON.stringify(data, null, 2)}`
+      : `[${timestamp}] ${message}`;
+    
+    this.logs.push(logMessage);
+    console.log(logMessage); // 仍然在控制台显示，方便开发调试
+  }
+  
+  static getAllLogs(): string {
+    return this.logs.join('\n\n');
+  }
+  
+  static downloadLogs(): void {
+    const logContent = this.getAllLogs();
+    const blob = new Blob([logContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `insurance_logs_${new Date().getTime()}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 100);
+  }
+  
+  static clearLogs(): void {
+    this.logs = [];
+  }
+}
+
+const InsuranceInterface: React.FC<InsuranceInterfaceProps> = ({ country = 'Global', compact = false }) => {
   const [selectedProduct, setSelectedProduct] = useState<InsuranceProduct>(INSURANCE_PRODUCTS[0]);
   const [amount, setAmount] = useState('1000');
   const [duration, setDuration] = useState(30); // 保单持续天数
@@ -89,7 +139,7 @@ const InsuranceInterface: React.FC<InsuranceInterfaceProps> = ({ country = '全�
   const { mutate: signAndExecuteTransaction } = useSignAndExecuteTransaction();
   
   // Get token balance
-  const token = TOKENS.find(t => t.symbol === 'sBTC')!;
+  const token = TOKENS.find(t => t.symbol === TOKENS[1].symbol)!;
   const tokenBalance = useTokenBalance(token);
 
   // 根据国家计算风险因子
@@ -147,11 +197,14 @@ const InsuranceInterface: React.FC<InsuranceInterfaceProps> = ({ country = '全�
     setPremium(calculatedPremium.toFixed(2));
   };
 
+  // 添加Drawer状态管理
+  const [showLogDrawer, setShowLogDrawer] = useState<boolean>(false);
+  
   // 购买保险
   const handleBuyInsurance = async () => {
-    console.log('当前钱包状态:', { 
-      currentAccount, 
-      selectedProduct,
+    LogManager.addLog('开始购买保险流程', { 
+      currentAccount: currentAccount?.address, 
+      selectedProduct: selectedProduct?.id,
       amount,
       duration,
       premium,
@@ -160,6 +213,7 @@ const InsuranceInterface: React.FC<InsuranceInterfaceProps> = ({ country = '全�
 
     if (!currentAccount) {
       setError('请先连接钱包');
+      LogManager.addLog('错误: 钱包未连接');
       return;
     }
 
@@ -170,39 +224,95 @@ const InsuranceInterface: React.FC<InsuranceInterfaceProps> = ({ country = '全�
       const insuredAmount = Math.floor(parseFloat(amount) * Math.pow(10, token.decimals || 6));
       const premiumAmount = Math.floor(parseFloat(premium) * Math.pow(10, token.decimals || 6));
 
-      // 构建创建保单交易
-      const transaction = {
-        kind: "moveCall",
-        data: {
-          packageObjectId: INSURANCE_CONTRACT.PACKAGE_ID,
-          module: INSURANCE_CONTRACT.INSURANCE.MODULE,
-          function: INSURANCE_CONTRACT.INSURANCE.FUNCTIONS.CREATE_POLICY,
-          typeArguments: [token.coinType || ''],
-          arguments: [
-            INSURANCE_CONTRACT.POLICY_MANAGER_ID, // PolicyManager对象ID
-            insuredAmount.toString(),
-            duration.toString(),
-            premiumAmount.toString(),
-            "0x6", // Clock对象ID
-            country || "全球" // 添加国家参数
-          ],
-        }
-      };
-
-      console.log('交易数据:', transaction);
-
-      const result = await signAndExecuteTransaction({
-        transaction: transaction as any,
+      // 获取用户钱包中的代币ID
+      LogManager.addLog('查询用户钱包中的代币', {
+        address: currentAccount.address,
+        coinType: token.coinType
+      });
+      
+      const coinObjects = await suiClient.getCoins({
+        owner: currentAccount.address,
+        coinType: token.coinType || '',
       });
 
-      console.log('交易结果:', result);
-      setSuccess(`成功购买保险！交易已提交`);
-      setLoading(false);
+      // 检查是否有足够的代币对象
+      if (!coinObjects || coinObjects.data.length === 0 || 
+          BigInt(coinObjects.data[0].balance) < BigInt(premiumAmount)) {
+        const errorMsg = `没有足够的${token.symbol}代币支付保费`;
+        setError(errorMsg);
+        LogManager.addLog('错误: ' + errorMsg, {
+          required: premiumAmount,
+          available: coinObjects?.data[0]?.balance || 0
+        });
+        setLoading(false);
+        return;
+      }
+
+      // 使用第一个足够金额的代币对象
+      const coinObjectId = coinObjects.data[0].coinObjectId;
+
+      // 创建交易区块
+      const tx = new Transaction();
+
+      // 调用mint_insurance函数，使用正确的Transaction API
+      const premiumCoin = tx.splitCoins(tx.object(coinObjectId), [BigInt(premiumAmount)]);
+
+      // 添加更详细的日志
+      const txParams = {
+        packageId: INSURANCE_CONTRACT.PACKAGE_ID,
+        module: 'insurance',
+        function: 'mint_insurance',
+        policyManagerId: INSURANCE_CONTRACT.POLICY_MANAGER_ID,
+        financePoolId: INSURANCE_CONTRACT.FINANCE_POOL_ID,
+        insuranceCapId: INSURANCE_CONTRACT.INSURANCE_CAP_ID,
+        insuredAmount,
+        duration,
+        premiumCoin,
+        clockId: COMMON_CONTRACT.CLOCK
+      };
+      
+      LogManager.addLog('交易参数详情', txParams);
+      tx.moveCall({
+        target: `${INSURANCE_CONTRACT.PACKAGE_ID}::insurance::mint_insurance`,
+        arguments: [
+          tx.object(INSURANCE_CONTRACT.POLICY_MANAGER_ID),
+          tx.object(INSURANCE_CONTRACT.FINANCE_POOL_ID),
+          tx.object(INSURANCE_CONTRACT.INSURANCE_CAP_ID),
+          tx.pure.u64(BigInt(insuredAmount)),
+          tx.pure.u64(BigInt(duration)),
+          premiumCoin, // 使用精确金额的代币
+          tx.object(COMMON_CONTRACT.CLOCK), // Clock对象ID
+        ]
+      });
+
+      LogManager.addLog('创建交易对象');
+
+      // 执行交易
+      LogManager.addLog('准备签名并执行交易');
+      signAndExecuteTransaction({
+        transaction: tx,
+      }, {
+        onSuccess: (result: any) => {
+          LogManager.addLog('交易成功', result);
+          setSuccess(`成功购买保险！交易已提交`);
+          setLoading(false);
+        },
+        onError: (err: any) => {
+          LogManager.addLog('交易错误', err);
+          setError(err.message || '交易失败');
+          setLoading(false);
+        }
+      });
     } catch (err: any) {
-      console.error('交易错误:', err);
+      LogManager.addLog('处理异常', err);
       setError(err.message || '交易失败');
       setLoading(false);
     }
+  };
+
+  // 添加导出日志功能
+  const handleExportLogs = () => {
+    LogManager.downloadLogs();
   };
 
   // 查看保单
@@ -218,127 +328,174 @@ const InsuranceInterface: React.FC<InsuranceInterfaceProps> = ({ country = '全�
   };
 
   return (
-    <StyledCard>
-      {/* 显示保险描述 */}
-      <Box sx={{ mb: 3, pb: 2, borderBottom: '1px solid rgba(194, 224, 255, 0.08)' }}>
-        <Typography variant="body2" color="text.secondary" align="center">
-          保障BTC算力波动下跌时的收益损失
-        </Typography>
-      </Box>
-      
-      {/* 保险参数设置 */}
-      <Box sx={{ mb: 3 }}>
-        <TextField
-          label="保障金额"
-          type="number"
-          value={amount}
-          onChange={handleAmountChange}
-          fullWidth
-          sx={{ mb: 2 }}
-          InputProps={{
-            endAdornment: <Typography>sBTC</Typography>
-          }}
-        />
-        
-        <FormControl fullWidth sx={{ mb: 2 }}>
-          <InputLabel>保障期限</InputLabel>
-          <Select
-            value={duration}
-            label="保障期限"
-            onChange={handleDurationChange as any}
-          >
-            {[7, 14, 30, 60, 90].filter(days => 
-              days >= selectedProduct.minDuration && 
-              days <= selectedProduct.maxDuration
-            ).map(days => (
-              <MenuItem key={days} value={days}>{days} 天</MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-        
-        {/* 显示计算的保费 */}
-        <Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 1, mb: 2 }}>
-          <Grid container justifyContent="space-between">
-            <Grid item>
-              <Typography variant="body2">预估保费:</Typography>
-            </Grid>
-            <Grid item>
-              <Typography variant="body1" fontWeight="bold">
-                {premium} sBTC
-              </Typography>
-            </Grid>
-          </Grid>
-        </Box>
-      </Box>
-      
-      {/* 操作按钮 */}
-      {currentAccount ? (
-        <Box>
-          <StyledButton 
-            variant="contained" 
-            color="primary"
-            onClick={handleBuyInsurance}
-            disabled={loading}
-            sx={{ mb: 2 }}
-          >
-            {loading ? <CircularProgress size={24} /> : '购买保险'}
-          </StyledButton>
-          
-          {!compact && (
-            <Grid container spacing={2}>
-              <Grid item xs={6}>
-                <Button 
-                  variant="outlined" 
-                  color="primary" 
-                  fullWidth
-                  onClick={handleViewPolicy}
-                >
-                  查看我的保单
-                </Button>
-              </Grid>
-              <Grid item xs={6}>
-                <Button 
-                  variant="outlined" 
-                  color="secondary" 
-                  fullWidth
-                  onClick={handleClaimInsurance}
-                >
-                  申请理赔
-                </Button>
-              </Grid>
-            </Grid>
-          )}
-        </Box>
-      ) : (
-        <Box sx={{ textAlign: 'center' }}>
-          <Typography variant="body1" gutterBottom>
-            请连接钱包以购买保险
+    <>
+      <StyledCard>
+        {/* 显示保险描述
+        <Box sx={{ mb: 3, pb: 2, borderBottom: '1px solid rgba(194, 224, 255, 0.08)' }}>
+          <Typography variant="body2" color="text.secondary" align="center">
+            保障BTC算力波动下跌时的收益损失
           </Typography>
-          <ConnectButton />
+        </Box> */}
+        
+        {/* 保险参数设置 */}
+        <Box sx={{ mb: 3 }}>
+          <TextField
+            label="Coverage Amount"
+            type="number"
+            value={amount}
+            onChange={handleAmountChange}
+            fullWidth
+            sx={{ mb: 2 }}
+            InputProps={{
+              endAdornment: <Typography>sBTC</Typography>
+            }}
+          />
+          
+          <FormControl fullWidth sx={{ mb: 2 }}>
+            <InputLabel>Coverage Period</InputLabel>
+            <Select
+              value={duration}
+              label="Coverage Period"
+              onChange={handleDurationChange as any}
+            >
+              {[7, 14, 30, 60, 90].filter(days => 
+                days >= selectedProduct.minDuration && 
+                days <= selectedProduct.maxDuration
+              ).map(days => (
+                <MenuItem key={days} value={days}>{days} days</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          
+          {/* 显示计算的保费 */}
+          <Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 1, mb: 2 }}>
+            <Grid container justifyContent="space-between">
+              <Grid item>
+                <Typography variant="body2">Estimated Premium:</Typography>
+              </Grid>
+              <Grid item>
+                <Typography variant="body1" fontWeight="bold">
+                  {premium} sBTC
+                </Typography>
+              </Grid>
+            </Grid>
+          </Box>
         </Box>
-      )}
+        
+        {/* 操作按钮 */}
+        {currentAccount ? (
+          <Box>
+            <StyledButton 
+              variant="contained" 
+              color="primary"
+              onClick={handleBuyInsurance}
+              disabled={loading}
+              sx={{ mb: 2 }}
+            >
+              {loading ? <CircularProgress size={24} /> : 'Buy Insurance'}
+            </StyledButton>
+            
+            {!compact && (
+              <Grid container spacing={2}>
+                <Grid item xs={6}>
+                  <Button 
+                    variant="outlined" 
+                    color="primary" 
+                    fullWidth
+                    onClick={handleViewPolicy}
+                  >
+                    View My Policies
+                  </Button>
+                </Grid>
+                <Grid item xs={6}>
+                  <Button 
+                    variant="outlined" 
+                    color="secondary" 
+                    fullWidth
+                    onClick={handleClaimInsurance}
+                  >
+                    File a Claim
+                  </Button>
+                </Grid>
+              </Grid>
+            )}
+          </Box>
+        ) : (
+          <Box sx={{ textAlign: 'center' }}>
+            <Typography variant="body1" gutterBottom>
+              Please connect your wallet to buy insurance
+            </Typography>
+            <ConnectButton />
+          </Box>
+        )}
+        
+        {/* 错误和成功提示 */}
+        <Snackbar 
+          open={!!error} 
+          autoHideDuration={6000} 
+          onClose={() => setError(null)}
+        >
+          <Alert severity="error" onClose={() => setError(null)}>
+            {error}
+          </Alert>
+        </Snackbar>
+        
+        <Snackbar 
+          open={!!success} 
+          autoHideDuration={6000} 
+          onClose={() => setSuccess(null)}
+        >
+          <Alert severity="success" onClose={() => setSuccess(null)}>
+            {success}
+          </Alert>
+        </Snackbar>
+      </StyledCard>
       
-      {/* 错误和成功提示 */}
-      <Snackbar 
-        open={!!error} 
-        autoHideDuration={6000} 
-        onClose={() => setError(null)}
+      {/* 日志抽屉 */}
+      <Drawer
+        anchor="right"
+        open={showLogDrawer}
+        onClose={() => setShowLogDrawer(false)}
       >
-        <Alert severity="error" onClose={() => setError(null)}>
-          {error}
-        </Alert>
-      </Snackbar>
-      
-      <Snackbar 
-        open={!!success} 
-        autoHideDuration={6000} 
-        onClose={() => setSuccess(null)}
-      >
-        <Alert severity="success" onClose={() => setSuccess(null)}>
-          {success}
-        </Alert>
-      </Snackbar>
-    </StyledCard>
+        <Box sx={{ width: 450, p: 2 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Typography variant="h6">Transaction Logs</Typography>
+            <Box>
+              <IconButton size="small" onClick={handleExportLogs} title="Export Logs">
+                <DownloadIcon />
+              </IconButton>
+              <IconButton size="small" onClick={() => LogManager.clearLogs()} title="Clear Logs">
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+              <IconButton size="small" onClick={() => setShowLogDrawer(false)} title="Close">
+                <CloseIcon />
+              </IconButton>
+            </Box>
+          </Box>
+          
+          <Divider sx={{ mb: 2 }} />
+          
+          <Box sx={{ height: 'calc(100vh - 100px)', overflow: 'auto' }}>
+            <List dense>
+              {LogManager.logs.map((log, index) => (
+                <ListItem key={index} sx={{ display: 'block', whiteSpace: 'pre-wrap', mb: 1 }}>
+                  <ListItemText 
+                    primary={log}
+                    sx={{ 
+                      '& .MuiListItemText-primary': { 
+                        fontFamily: 'monospace', 
+                        fontSize: '0.85rem' 
+                      } 
+                    }}
+                  />
+                  <Divider />
+                </ListItem>
+              ))}
+            </List>
+          </Box>
+        </Box>
+      </Drawer>
+    </>
   );
 };
 

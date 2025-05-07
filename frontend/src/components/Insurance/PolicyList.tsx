@@ -14,7 +14,8 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  Alert
+  Alert,
+  IconButton
 } from '@mui/material';
 import {
   useCurrentAccount,
@@ -22,6 +23,10 @@ import {
   useSignAndExecuteTransaction,
 } from '@mysten/dapp-kit';
 import { INSURANCE_CONTRACT } from '../../config/contracts';
+import { Transaction } from '@mysten/sui/transactions';
+import { COMMON_CONTRACT } from '../../config/contracts';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import LogManager from '../../utils/LogManager';
 
 // 样式化组件
 const PolicyCard = styled(Card)(({ theme }) => ({
@@ -38,67 +43,29 @@ const PolicyCard = styled(Card)(({ theme }) => ({
 // 定义保单类型
 interface Policy {
   id: string;
-  productId: string;
-  name: string;
   insuredAmount: number;
   premium: number;
   startDate: Date;
   endDate: Date;
-  status: 'active' | 'expired' | 'claimed';
+  status: 'active' | 'claimed' | 'redeemed';
   coveragePercentage: number;
+  nftId?: string;
 }
-
-// 模拟保单数据
-const MOCK_POLICIES: Policy[] = [
-  {
-    id: '0x123456789abcdef',
-    productId: 'btc_price',
-    name: 'BTC价格波动保险',
-    insuredAmount: 1000,
-    premium: 3.6,
-    startDate: new Date(2024, 3, 1),
-    endDate: new Date(2024, 3, 30),
-    status: 'active',
-    coveragePercentage: 0.8
-  },
-  {
-    id: '0x987654321fedcba',
-    productId: 'sui_price',
-    name: 'SUI价格波动保险',
-    insuredAmount: 500,
-    premium: 2.25,
-    startDate: new Date(2024, 2, 15),
-    endDate: new Date(2024, 4, 15),
-    status: 'active',
-    coveragePercentage: 0.7
-  },
-  {
-    id: '0xabcdef123456789',
-    productId: 'btc_price',
-    name: 'BTC价格波动保险',
-    insuredAmount: 2000,
-    premium: 7.2,
-    startDate: new Date(2024, 1, 1),
-    endDate: new Date(2024, 2, 1),
-    status: 'expired',
-    coveragePercentage: 0.8
-  }
-];
 
 // 格式化日期函数
 const formatDate = (date: Date): string => {
-  return date.toLocaleDateString('zh-CN', { 
-    year: 'numeric', 
-    month: '2-digit', 
-    day: '2-digit' 
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
   });
 };
 
 // 保单状态标签颜色映射
 const statusColorMap = {
   active: 'success',
-  expired: 'default',
-  claimed: 'primary'
+  claimed: 'primary',
+  redeemed: 'default'
 };
 
 const PolicyList: React.FC = () => {
@@ -116,31 +83,227 @@ const PolicyList: React.FC = () => {
   const suiClient = useSuiClient();
   const { mutate: signAndExecuteTransaction } = useSignAndExecuteTransaction();
 
-  // 加载保单数据
-  useEffect(() => {
-    const fetchPolicies = async () => {
-      try {
-        setLoading(true);
-        
-        // 如果用户已连接钱包，则从链上获取保单
-        if (currentAccount) {
-          // 暂时使用模拟数据，实际应从链上获取数据
-          // 这里需要实现与合约交互的逻辑
-          setTimeout(() => {
-            setPolicies(MOCK_POLICIES);
-            setLoading(false);
-          }, 1000);
-        } else {
-          setPolicies([]);
-          setLoading(false);
-        }
-      } catch (err: any) {
-        console.error('获取保单失败:', err);
-        setError('获取保单失败: ' + (err.message || '未知错误'));
+  // 从区块链加载保单数据
+  const fetchPolicies = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      if (!currentAccount) {
+        setPolicies([]);
         setLoading(false);
+        return;
       }
-    };
 
+      LogManager.addLog('开始获取保单，当前账户:', currentAccount.address);
+      LogManager.addLog('保险合约地址:', INSURANCE_CONTRACT.PACKAGE_ID);
+
+      // 1. 分页获取用户拥有的所有对象，直到全部获取完毕
+      let allObjects: any[] = [];
+      let cursor: string | null = null;
+      let hasNextPage = true;
+      const pageLimit = 50; // 可根据Sui后端最大支持调整
+
+      while (hasNextPage) {
+        const resp = await suiClient.getOwnedObjects({
+          owner: currentAccount.address,
+          options: {
+            showContent: true,
+            showType: true,
+          },
+          cursor: cursor,
+          limit: pageLimit,
+        });
+        allObjects = allObjects.concat(resp.data);
+        cursor = resp.nextCursor ?? null;
+        hasNextPage = resp.hasNextPage;
+      }
+
+      // LogManager.addLog('用户拥有的所有对象（分页后）:', allObjects);
+      
+      // 检查对象类型
+      allObjects.forEach((obj, index) => {
+        if (obj.data?.type === `${INSURANCE_CONTRACT.PACKAGE_ID}::insurance_nft::InsuranceNFT`) {
+          LogManager.addLog(`找到的保险NFT:`, obj.data?.objectId);
+        }
+      });
+
+      // 过滤出保险NFT
+      const insuranceNFTs = allObjects.filter(obj => 
+        obj.data?.type.includes(`${INSURANCE_CONTRACT.PACKAGE_ID}::insurance_nft::InsuranceNFT`)
+      );
+
+      LogManager.addLog('找到的保险NFT数量:', insuranceNFTs.length);
+      LogManager.addLog('保险NFT详情:', insuranceNFTs);
+
+      if (insuranceNFTs.length === 0) {
+        LogManager.addLog('未找到保险NFT');
+        setPolicies([]);
+        setLoading(false);
+        return;
+      }
+
+      // 2. 获取PolicyManager对象
+      const policyManagerObject = await suiClient.getObject({
+        id: INSURANCE_CONTRACT.POLICY_MANAGER_ID,
+        options: {
+          showContent: true,
+          showType: true,
+          showOwner: true,
+        },
+      });
+
+      if (!policyManagerObject.data) {
+        throw new Error('无法获取PolicyManager对象');
+      }
+
+      LogManager.addLog('PolicyManager对象:', policyManagerObject);
+      
+      // 提取policies表的ID
+      const policiesTableId = policyManagerObject.data.content as any;
+      const policiesId = policiesTableId?.fields?.policies?.fields?.id?.id;
+      
+      if (!policiesId) {
+        throw new Error('无法获取policies表ID');
+      }
+      
+      LogManager.addLog('Policies表ID:', policiesId);
+
+      // 3. 调用查询动态字段的RPC以获取保单信息
+      const userPolicies: Policy[] = [];
+
+      for (const nft of insuranceNFTs) {
+        if (!nft.data?.objectId) continue;
+
+        try {
+          LogManager.addLog('查询NFT关联保单:', nft.data.objectId);
+          
+          // 从NFT对象中获取policy_id
+          const policyId = nft.data?.content?.fields?.policy_id;
+          
+          if (!policyId) {
+            LogManager.addLog('NFT中未找到policy_id字段:', nft.data.objectId);
+            continue;
+          }
+          
+          LogManager.addLog('从NFT中获取到保单ID:', policyId);
+          
+          // 使用动态字段API查询保单 - 使用正确的表ID作为parentId
+          const policyFieldObject = await suiClient.getDynamicFieldObject({
+            parentId: policiesId, // 使用policies表ID，而不是PolicyManager对象ID
+            name: {
+              type: "0x2::object::ID", // 键类型
+              value: policyId // 保单ID
+            }
+          });
+          
+          LogManager.addLog('动态字段查询结果:', policyFieldObject);
+          
+          if (policyFieldObject.data) {
+            // 使用类型断言获取动态字段内容
+            const dynamicField = policyFieldObject.data.content as unknown as {
+              type: string;
+              dataType: string;
+              fields: {
+                name: { type: string; value: string };
+                value: {
+                  id: string;
+                  amount: string;
+                  duration: string;
+                  start_time: string;
+                  premium: string;
+                  owner: string;
+                  status: string;
+                }
+              }
+            };
+            
+            // 详细记录动态字段结构，帮助调试
+            LogManager.addLog('动态字段详细内容:', JSON.stringify(dynamicField));
+            
+            if (dynamicField?.fields?.value) {
+              const policyData = dynamicField.fields.value as unknown as {
+                type: string;
+                fields?: {
+                  id: string;
+                  amount: string;
+                  duration: string;
+                  start_time: string;
+                  premium: string;
+                  owner: string;
+                  status: number | string;
+                }
+              };
+              
+              LogManager.addLog('保单动态字段数据:', policyData);
+              
+              // 检查并记录ID值 - 正确访问字段路径
+              const policyFields = policyData.fields;
+              LogManager.addLog('保单字段:', policyFields);
+              
+              if (!policyFields) {
+                LogManager.addLog('保单字段数据为空');
+                continue;
+              }
+              
+              // 现在正确访问各个字段
+              const policyIdStr = policyFields.id || nft.data?.content?.fields?.policy_id || 'Unknown ID';
+              
+              // 将区块链时间戳（秒）转换为JavaScript日期
+              const startTimeMs = parseInt(policyFields.start_time) * 1000;
+              const startDate = new Date(startTimeMs);
+              const durationDays = parseInt(policyFields.duration);
+              const endDate = new Date(startTimeMs + durationDays * 24 * 60 * 60 * 1000);
+              
+              // 确定保单状态
+              let status: 'active' | 'claimed' | 'redeemed';
+              switch (parseInt(String(policyFields.status))) {
+                case 0: status = 'active'; break;
+                case 1: status = 'claimed'; break;
+                case 2: status = 'redeemed'; break;
+                default: status = 'active';
+              }
+              
+              // 确保属性名与Policy接口匹配
+              userPolicies.push({
+                id: policyIdStr, // 使用已经处理过的ID
+                insuredAmount: parseInt(policyFields.amount) / 1000000, // 字段名需匹配接口
+                premium: parseInt(policyFields.premium) / 1000000,
+                startDate,
+                endDate,
+                status,
+                coveragePercentage: 0.8,
+                nftId: nft.data.objectId // 保留NFT ID用于后续claim和redeem操作
+              });
+              
+              LogManager.addLog('成功解析保单:', {
+                id: policyIdStr,
+                amount: policyFields.amount,
+                premium: policyFields.premium,
+                startTime: policyFields.start_time
+              });
+            } else {
+              LogManager.addLog('动态字段不包含保单值数据');
+            }
+          } else {
+            LogManager.addLog('未找到NFT对应的保单动态字段:', policyId);
+          }
+        } catch (err) {
+          LogManager.addLog(`获取动态字段失败:`, err);
+        }
+      }
+
+      LogManager.addLog('最终获取到的保单:', userPolicies);
+      setPolicies(userPolicies);
+      setLoading(false);
+    } catch (err: any) {
+      LogManager.addLog('获取保单失败:', err);
+      setError('获取保单失败: ' + (err.message || '未知错误'));
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchPolicies();
   }, [currentAccount, suiClient]);
 
@@ -158,48 +321,58 @@ const PolicyList: React.FC = () => {
   };
 
   const handleSubmitClaim = async () => {
-    if (!selectedPolicy || !currentAccount) return;
+    if (!selectedPolicy || !currentAccount || !selectedPolicy.nftId) return;
     
     try {
       setClaimLoading(true);
       
-      // 计算理赔金额（微单位）
-      const amount = Math.floor(parseFloat(claimAmount) * 1000000);
+      // 将理赔金额转换为合约所需的微单位
+      const claimAmountMicro = Math.floor(parseFloat(claimAmount) * 1000000);
+
+      // 创建理赔交易
+      const tx = new Transaction();
       
-      // 构建理赔交易
-      const transaction = {
-        kind: "moveCall",
-        data: {
-          packageObjectId: INSURANCE_CONTRACT.PACKAGE_ID,
-          module: INSURANCE_CONTRACT.INSURANCE.MODULE,
-          function: INSURANCE_CONTRACT.INSURANCE.FUNCTIONS.CLAIM,
-          typeArguments: [],
-          arguments: [
-            INSURANCE_CONTRACT.POLICY_MANAGER_ID, // PolicyManager对象ID
-            selectedPolicy.id, // 保单ID
-            claimReason, // proof参数，这里使用理赔原因
-          ],
-        }
-      };
-
-      console.log('理赔交易数据:', transaction);
-
-      const result = await signAndExecuteTransaction({
-        transaction: transaction as any,
+      // 将理赔原因转换为字节数组作为proof
+      const proofBytes = Array.from(new TextEncoder().encode(claimReason));
+      
+      tx.moveCall({
+        target: `${INSURANCE_CONTRACT.PACKAGE_ID}::insurance::claim`,
+        arguments: [
+          tx.object(INSURANCE_CONTRACT.POLICY_MANAGER_ID),
+          tx.object(INSURANCE_CONTRACT.FINANCE_POOL_ID),
+          tx.object(INSURANCE_CONTRACT.INSURANCE_CAP_ID),
+          tx.pure.id(selectedPolicy.id),
+          tx.pure.vector('u8', proofBytes),
+          tx.object(COMMON_CONTRACT.CLOCK)
+        ]
       });
 
-      console.log('理赔交易结果:', result);
+      console.log('理赔交易:', tx);
+
+      // 执行交易
+      await signAndExecuteTransaction({
+        transaction: tx,
+      }, {
+        onSuccess: (result) => {
+          console.log('理赔交易成功:', result);
+          
+          // 更新本地保单状态
+          setPolicies(prev => 
+            prev.map(p => 
+              p.id === selectedPolicy.id 
+                ? { ...p, status: 'claimed' as const } 
+                : p
+            )
+          );
+          
+          handleCloseClaimDialog();
+        },
+        onError: (error) => {
+          console.error('理赔交易失败:', error);
+          setError('理赔申请失败: ' + (error.message || '未知错误'));
+        }
+      });
       
-      // 更新本地保单状态
-      setPolicies(prev => 
-        prev.map(p => 
-          p.id === selectedPolicy.id 
-            ? { ...p, status: 'claimed' as const } 
-            : p
-        )
-      );
-      
-      handleCloseClaimDialog();
       setClaimLoading(false);
     } catch (err: any) {
       console.error('理赔申请失败:', err);
@@ -210,36 +383,42 @@ const PolicyList: React.FC = () => {
 
   // 处理赎回保单
   const handleRedeem = async (policy: Policy) => {
-    if (!currentAccount) return;
+    if (!currentAccount || !policy.nftId) return;
     
     try {
       setLoading(true);
       
-      // 构建赎回交易
-      const transaction = {
-        kind: "moveCall",
-        data: {
-          packageObjectId: INSURANCE_CONTRACT.PACKAGE_ID,
-          module: INSURANCE_CONTRACT.INSURANCE.MODULE,
-          function: INSURANCE_CONTRACT.INSURANCE.FUNCTIONS.REDEEM,
-          typeArguments: [],
-          arguments: [
-            INSURANCE_CONTRACT.POLICY_MANAGER_ID, // PolicyManager对象ID
-            policy.id // 保单ID
-          ],
-        }
-      };
-
-      console.log('赎回交易数据:', transaction);
-
-      const result = await signAndExecuteTransaction({
-        transaction: transaction as any,
+      // 创建赎回交易
+      const tx = new Transaction();
+      
+      tx.moveCall({
+        target: `${INSURANCE_CONTRACT.PACKAGE_ID}::insurance::redeem`,
+        arguments: [
+          tx.object(INSURANCE_CONTRACT.POLICY_MANAGER_ID),
+          tx.object(INSURANCE_CONTRACT.FINANCE_POOL_ID),
+          tx.object(INSURANCE_CONTRACT.INSURANCE_CAP_ID),
+          tx.pure.id(policy.nftId),
+          tx.object(COMMON_CONTRACT.CLOCK)
+        ]
       });
 
-      console.log('赎回交易结果:', result);
-      
-      // 更新本地保单状态
-      setPolicies(prev => prev.filter(p => p.id !== policy.id));
+      console.log('赎回交易:', tx);
+
+      // 执行交易
+      await signAndExecuteTransaction({
+        transaction: tx,
+      }, {
+        onSuccess: (result) => {
+          console.log('赎回交易成功:', result);
+          
+          // 更新本地保单状态，从列表中移除
+          setPolicies(prev => prev.filter(p => p.id !== policy.id));
+        },
+        onError: (error) => {
+          console.error('赎回交易失败:', error);
+          setError('保单赎回失败: ' + (error.message || '未知错误'));
+        }
+      });
       
       setLoading(false);
     } catch (err: any) {
@@ -276,7 +455,7 @@ const PolicyList: React.FC = () => {
     return (
       <Box>
         <Typography variant="body1" textAlign="center" my={4}>
-          请先连接钱包以查看您的保单
+          Please connect your wallet to view your policies
         </Typography>
       </Box>
     );
@@ -286,28 +465,79 @@ const PolicyList: React.FC = () => {
     return (
       <Box>
         <Typography variant="body1" textAlign="center" my={4}>
-          您还没有购买任何保险保单
+          You have not purchased any insurance policies yet
         </Typography>
+        <Box display="flex" justifyContent="center" mt={2}>
+          <IconButton 
+            onClick={fetchPolicies} 
+            disabled={loading}
+            color="primary"
+            title="Refresh Policy List"
+          >
+            <RefreshIcon />
+          </IconButton>
+        </Box>
       </Box>
     );
   }
 
   return (
     <Box>
-      <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>
-        我的保单 ({policies.length})
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 3 }}>
+        <IconButton 
+          onClick={fetchPolicies} 
+          disabled={loading}
+          color="primary"
+          title="Refresh Policy List"
+        >
+          <RefreshIcon />
+        </IconButton>
+      </Box>
+      
+      {/* <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h6">
+          我的保单 ({policies.length})
+        </Typography>
+      </Box> */}
+      
+      {loading && (
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="100px">
+          <CircularProgress />
+        </Box>
+      )}
+      
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+      
+      {!loading && !error && currentAccount && policies.length === 0 && (
+        <Box>
+          <Typography variant="body1" textAlign="center" my={4}>
+            You have not purchased any insurance policies yet
+          </Typography>
+        </Box>
+      )}
+      
+      {!loading && !currentAccount && (
+        <Box>
+          <Typography variant="body1" textAlign="center" my={4}>
+            Please connect your wallet to view your policies
+          </Typography>
+        </Box>
+      )}
       
       {policies.map(policy => (
-        <PolicyCard key={policy.id}>
+        <PolicyCard key={policy.id || 'unknown'}>
           <CardContent>
             <Grid container spacing={2}>
               <Grid item xs={12} display="flex" justifyContent="space-between" alignItems="center">
-                <Typography variant="h6">
-                  {policy.name}
-                </Typography>
+                {/* <Typography variant="h6">
+                  BTC算力波动保险
+                </Typography> */}
                 <Chip 
-                  label={policy.status === 'active' ? '有效' : policy.status === 'expired' ? '已过期' : '已理赔'} 
+                  label={policy.status === 'active' ? 'Active' : policy.status === 'claimed' ? 'Claimed' : 'Redeemed'} 
                   color={statusColorMap[policy.status] as any}
                   size="small"
                 />
@@ -315,16 +545,16 @@ const PolicyList: React.FC = () => {
               
               <Grid item xs={12} sm={6}>
                 <Typography variant="body2" color="text.secondary">
-                  保单ID
+                  Policy ID
                 </Typography>
                 <Typography variant="body2" fontFamily="monospace">
-                  {policy.id.substring(0, 10)}...
+                  {policy.id ? `${policy.id.substring(0, 10)}...` : 'Unknown ID'}
                 </Typography>
               </Grid>
               
               <Grid item xs={12} sm={6}>
                 <Typography variant="body2" color="text.secondary">
-                  保障金额
+                  Coverage Amount
                 </Typography>
                 <Typography variant="body1" fontWeight="bold">
                   {policy.insuredAmount} sBTC
@@ -333,16 +563,16 @@ const PolicyList: React.FC = () => {
               
               <Grid item xs={12} sm={6}>
                 <Typography variant="body2" color="text.secondary">
-                  保障期限
+                  Coverage Period
                 </Typography>
                 <Typography variant="body2">
-                  {formatDate(policy.startDate)} 至 {formatDate(policy.endDate)}
+                  {formatDate(policy.startDate)} to {formatDate(policy.endDate)}
                 </Typography>
               </Grid>
               
               <Grid item xs={12} sm={6}>
                 <Typography variant="body2" color="text.secondary">
-                  保费
+                  Premium
                 </Typography>
                 <Typography variant="body2">
                   {policy.premium} sBTC
@@ -352,39 +582,32 @@ const PolicyList: React.FC = () => {
               {policy.status === 'active' && (
                 <Grid item xs={12} sm={6}>
                   <Typography variant="body2" color="text.secondary">
-                    剩余天数
+                    Days Remaining
                   </Typography>
                   <Typography variant="body2" color={getRemainingDays(policy.endDate) < 7 ? 'error.main' : 'inherit'}>
-                    {getRemainingDays(policy.endDate)} 天
+                    {getRemainingDays(policy.endDate)} days
                   </Typography>
                 </Grid>
               )}
               
               <Grid item xs={12} sm={6}>
                 <Typography variant="body2" color="text.secondary">
-                  保障范围
+                  Coverage Scope
                 </Typography>
                 <Typography variant="body2">
-                  {policy.coveragePercentage * 100}% 价格波动损失
+                  {policy.coveragePercentage * 100}% Price Volatility Loss
                 </Typography>
               </Grid>
               
               {policy.status === 'active' && (
                 <Grid item xs={12} mt={1} display="flex" justifyContent="flex-end" gap={1}>
                   <Button 
-                    variant="outlined" 
-                    size="small" 
-                    onClick={() => handleRedeem(policy)}
-                  >
-                    赎回保单
-                  </Button>
-                  <Button 
                     variant="contained" 
                     size="small"
                     color="primary"
                     onClick={() => handleOpenClaimDialog(policy)}
                   >
-                    申请理赔
+                    File a Claim
                   </Button>
                 </Grid>
               )}
@@ -395,41 +618,24 @@ const PolicyList: React.FC = () => {
       
       {/* 理赔申请对话框 */}
       <Dialog open={openClaimDialog} onClose={handleCloseClaimDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>申请保险理赔</DialogTitle>
+        <DialogTitle>File Insurance Claim</DialogTitle>
         <DialogContent>
           {selectedPolicy && (
             <>
               <Box mb={2}>
                 <Typography variant="subtitle2" gutterBottom>
-                  保单信息:
+                  Policy Info:
                 </Typography>
                 <Typography variant="body2">
-                  保险类型: {selectedPolicy.name}
+                  Insurance Type: BTC Hashrate Volatility
                 </Typography>
                 <Typography variant="body2">
-                  保障金额: {selectedPolicy.insuredAmount} sBTC
-                </Typography>
-                <Typography variant="body2">
-                  最高赔付: {(selectedPolicy.insuredAmount * selectedPolicy.coveragePercentage).toFixed(2)} sBTC
+                  Coverage Amount: {selectedPolicy.insuredAmount} sBTC
                 </Typography>
               </Box>
               
               <TextField
-                label="申请理赔金额"
-                type="number"
-                fullWidth
-                variant="outlined"
-                value={claimAmount}
-                onChange={(e) => setClaimAmount(e.target.value)}
-                margin="normal"
-                InputProps={{
-                  endAdornment: <Typography variant="body2">sBTC</Typography>
-                }}
-                helperText={`最高可申请 ${(selectedPolicy.insuredAmount * selectedPolicy.coveragePercentage).toFixed(2)} sBTC`}
-              />
-              
-              <TextField
-                label="理赔原因"
+                label="Claim Reason"
                 fullWidth
                 multiline
                 rows={4}
@@ -437,22 +643,22 @@ const PolicyList: React.FC = () => {
                 value={claimReason}
                 onChange={(e) => setClaimReason(e.target.value)}
                 margin="normal"
-                placeholder="请详细描述损失原因和情况..."
+                placeholder="Please describe the reason and situation in detail..."
               />
             </>
           )}
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseClaimDialog} disabled={claimLoading}>
-            取消
+            Cancel
           </Button>
           <Button 
             onClick={handleSubmitClaim} 
             variant="contained" 
             color="primary"
-            disabled={claimLoading || !claimAmount || !claimReason}
+            disabled={claimLoading || !claimReason}
           >
-            {claimLoading ? <CircularProgress size={24} /> : '提交理赔申请'}
+            {claimLoading ? <CircularProgress size={24} /> : 'Submit Claim'}
           </Button>
         </DialogActions>
       </Dialog>
