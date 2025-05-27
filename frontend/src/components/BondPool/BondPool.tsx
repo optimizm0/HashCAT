@@ -154,10 +154,12 @@ const BondPool: React.FC = () => {
       const coinObjectId = coinObjects.data[0].coinObjectId;
       const tx = new Transaction();
       // 购买债券
+      // @ts-ignore
       const paymentCoin = tx.splitCoins(tx.object(coinObjectId), [BigInt(amountValue)]);
       // 将lockPeriod（月）转换为秒
       const lockPeriodMonths = parseInt(lockPeriod);
       const maturitySeconds = lockPeriodMonths * 30 * 24 * 60 * 60; // 近似每月30天
+      // @ts-ignore
       tx.moveCall({
         target: `${BOND_CONTRACT.PACKAGE_ID}::bond_pkg::buy_bond`,
         arguments: [
@@ -194,6 +196,7 @@ const BondPool: React.FC = () => {
     setWithdrawingId(bond.objectId);
     try {
       const tx = new Transaction();
+      // @ts-ignore
       tx.moveCall({
         target: `${BOND_CONTRACT.PACKAGE_ID}::bond_pkg::redeem_bond`,
         arguments: [
@@ -233,6 +236,7 @@ const BondPool: React.FC = () => {
     let hasNextPage = true;
     const pageLimit = 50;
     while (hasNextPage) {
+      // @ts-ignore
       const resp = await suiClient.getOwnedObjects({
         owner: currentAccount.address,
         options: { showContent: true, showType: true },

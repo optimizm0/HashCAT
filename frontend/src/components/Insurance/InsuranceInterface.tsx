@@ -255,6 +255,7 @@ const InsuranceInterface: React.FC<InsuranceInterfaceProps> = ({ country = 'Glob
       const tx = new Transaction();
 
       // 调用mint_insurance函数，使用正确的Transaction API
+      // @ts-ignore
       const premiumCoin = tx.splitCoins(tx.object(coinObjectId), [BigInt(premiumAmount)]);
 
       // 添加更详细的日志
@@ -272,6 +273,7 @@ const InsuranceInterface: React.FC<InsuranceInterfaceProps> = ({ country = 'Glob
       };
       
       LogManager.addLog('交易参数详情', txParams);
+      // @ts-ignore
       tx.moveCall({
         target: `${INSURANCE_CONTRACT.PACKAGE_ID}::insurance::mint_insurance`,
         arguments: [

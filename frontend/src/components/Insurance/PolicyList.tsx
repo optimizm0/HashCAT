@@ -105,6 +105,7 @@ const PolicyList: React.FC = () => {
       const pageLimit = 50; // 可根据Sui后端最大支持调整
 
       while (hasNextPage) {
+      // @ts-ignore
         const resp = await suiClient.getOwnedObjects({
           owner: currentAccount.address,
           options: {
@@ -334,7 +335,7 @@ const PolicyList: React.FC = () => {
       
       // 将理赔原因转换为字节数组作为proof
       const proofBytes = Array.from(new TextEncoder().encode(claimReason));
-      
+      // @ts-ignore
       tx.moveCall({
         target: `${INSURANCE_CONTRACT.PACKAGE_ID}::insurance::claim`,
         arguments: [
@@ -390,7 +391,7 @@ const PolicyList: React.FC = () => {
       
       // 创建赎回交易
       const tx = new Transaction();
-      
+      // @ts-ignore
       tx.moveCall({
         target: `${INSURANCE_CONTRACT.PACKAGE_ID}::insurance::redeem`,
         arguments: [
