@@ -157,4 +157,4 @@ Apache 2.0 © 2025 HashCAT Foundation
 4. **Mermaid Diagrams** - Visualizes architecture and flows
 5. **Code Snippets** - Provides executable examples
 6. **Parameter Tables** - Organizes critical settings
-7. **Test Cases** - Includes verifiable scenarios
+
